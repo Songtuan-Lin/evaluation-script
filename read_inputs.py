@@ -1,13 +1,22 @@
 import os
 import subprocess
-import argparse
 
-prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
+from tqdm import tqdm
+
+# prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
+prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
 planFilePath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "IPC-2020")
+progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progression-132")
 # planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-po")
 # planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-to")
 # parser = argparse.ArgumentParser(description='Process Command Line Arguments')
 # parser.add_argument('--file', type=str)
+
+filenames = []
+for filename in os.listdir(planFilePath):
+    filenames.append(os.path.join(planFilePath, filename))
+for filename in os.listdir(progressionPlanPath):
+    filenames.append(os.path.join(progressionPlanPath, filename))
 
 numFile = 3000
 domainDir = os.path.join(prefix, "HTN-po-domains")
@@ -18,10 +27,10 @@ if not os.path.exists(domainDir):
 
 
 visitedNumFile = 0
-for filename in os.listdir(planFilePath):
+for filename in tqdm(filenames):
     visitedNumFile = visitedNumFile + 1
-    absFilePath = os.path.join(planFilePath, filename)
-    with open(absFilePath) as f:
+    # absFilePath = os.path.join(planFilePath, filename)
+    with open(filename) as f:
         domainFile = f.readline().strip()
         problemFile = f.readline().strip()
         plan = f.readline()
@@ -55,21 +64,23 @@ for filename in os.listdir(planFilePath):
     absDomainPath = os.path.join(prefix, domainFile)
     absProblemPath = os.path.join(prefix, problemFile)
 
-    grounderPath = os.path.join(prefix, "pandaPIgrounder/pandaPIgrounder")
-    parserPath = os.path.join(prefix, "pandaPIparser/pandaPIparser")
+    if not os.path.exists(absGroundOutputPath):
+        grounderPath = os.path.join(prefix, "pandaPIgrounder/pandaPIgrounder")
+        parserPath = os.path.join(prefix, "pandaPIparser/pandaPIparser")
 
-    if not os.path.exists(newDomainDir):
-        os.mkdir(newDomainDir)
-    if not os.path.exists(newProblemDir):
-        os.mkdir(newProblemDir)
-    subprocess.run(["cp", absDomainPath, newDomainDir])
-    subprocess.run(["cp", absProblemPath, newProblemDir])
+        if not os.path.exists(newDomainDir):
+            os.mkdir(newDomainDir)
+        if not os.path.exists(newProblemDir):
+            os.mkdir(newProblemDir)
+        subprocess.run(["cp", absDomainPath, newDomainDir])
+        subprocess.run(["cp", absProblemPath, newProblemDir])
 
-    execGrounder = "./{}".format(os.path.relpath(grounderPath))
-    execParser = "./{}".format(os.path.relpath(parserPath))
-    subprocess.run([execParser, "-m", absDomainPath, absProblemPath, absParseOutputPath])
-    # subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath])
-    subprocess.run([execGrounder, "-E", "-D", absParseOutputPath, absGroundOutputPath])
+        execGrounder = "./{}".format(os.path.relpath(grounderPath))
+        execParser = "./{}".format(os.path.relpath(parserPath))
+        subprocess.run([execParser, "-m", absDomainPath, absProblemPath, absParseOutputPath], capture_output=True)
+
+        # subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath])
+        subprocess.run([execGrounder, "-E", "-D", absParseOutputPath, absGroundOutputPath], capture_output=True)
 
     numExistedPlans = len(os.listdir(planDir))
     planFileName = "plan_{n}.txt".format(n = numExistedPlans + 1)

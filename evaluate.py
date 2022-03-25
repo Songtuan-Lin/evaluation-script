@@ -3,14 +3,23 @@ import os.path as path
 import subprocess
 from tqdm import tqdm
 
-totalInstances = 226
-pbar = tqdm(total=totalInstances)
 
 homeDir = path.expanduser("~")
-benchmarkDir = path.join(homeDir, "Projects", "pandaPI", "HTN-po-domains")
+benchmarkDir = path.join(homeDir, "projects", "pandaPI", "HTN-po-domains")
 assert(path.exists(benchmarkDir))
 
-executable = path.join(homeDir, "Projects", "pandaPI", "pandaPIengine", "build", "run_verifier")
+
+totalInstances = 0
+for domainDir in os.listdir(benchmarkDir):
+    domainDirAbs = path.join(benchmarkDir, domainDir)
+    for problemDir in os.listdir(domainDirAbs):
+        problemDirAbs = path.join(domainDirAbs, problemDir)
+        planDir = path.join(problemDirAbs, "plans")
+        for planPath in os.listdir(planDir):
+            totalInstances += 1
+pbar = tqdm(total=totalInstances)
+
+executable = path.join(homeDir, "projects", "pandaPI", "pandaPIengine", "build", "run_verifier")
 assert(path.exists(executable))
 execExcutable = "./{}".format(path.relpath(executable))
 
@@ -24,6 +33,8 @@ numFailedInstances = 0
 numIncorrectInstances = 0
 
 numInstances = 0
+
+runTimes = []
 
 for domainDir in os.listdir(benchmarkDir):
     domainName = domainDir
@@ -82,6 +93,8 @@ for domainDir in os.listdir(benchmarkDir):
                     times = [e for e in errs.split("\n") if e]
                     wallTime = times[0].split('\t')[-1]
                     minutes, seconds = wallTime.split("m")[0], wallTime.split("m")[-1][:-1]
+                    totalSeconds = float(minutes) * 60 + float(seconds)
+                    runTimes.append(totalSeconds)
                     # print(minutes, seconds)
                 else:
                     numIncorrectInstances += 1
@@ -92,8 +105,13 @@ for domainDir in os.listdir(benchmarkDir):
                 f.write(outs)
 
             numInstances += 1
+            # if numInstances % 20 == 0:
+            #     message = "Num of succeed instances: {}\t Num of failed instances: {}\t Num of incorrect instances: {}".format(numSucceedInstances, numFailedInstances, numIncorrectInstances)
+            #     tqdm.write(message)
+            desc = "Succeed: {}/Failed: {}/Incorrect: {}".format(numSucceedInstances, numFailedInstances, numIncorrectInstances)
             pbar.update()
-            pbar.refresh()
+            pbar.set_description(desc, refresh=True)
+            # pbar.refresh()
 
 pbar.close()              
 
