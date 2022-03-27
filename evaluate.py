@@ -1,11 +1,13 @@
 import os
 import os.path as path
 import subprocess
+import matplotlib.pyplot as plt 
 from tqdm import tqdm
 
 
 homeDir = path.expanduser("~")
-benchmarkDir = path.join(homeDir, "projects", "pandaPI", "HTN-po-domains")
+# benchmarkDir = path.join(homeDir, "projects", "pandaPI", "HTN-po-domains")
+benchmarkDir = path.join(homeDir, "projects", "pandaPI", "Demo")
 assert(path.exists(benchmarkDir))
 
 
@@ -27,6 +29,8 @@ currentDir = os.getcwd()
 outputDir = path.join(currentDir, "eval-outputs")
 if not path.exists(outputDir):
     os.mkdir(outputDir)
+
+runtimeInfoFile = path.join(outputDir, "runtimeInfo.txt")
 
 numSucceedInstances = 0
 numFailedInstances = 0
@@ -68,6 +72,10 @@ for domainDir in os.listdir(benchmarkDir):
             planFile = path.join(planDir, planPath)
             assert(path.exists(planFile))
 
+            with open(planFile, "r") as pf:
+                plan = pf.readlines()[0]
+                planLength = len(plan.split(";"))
+
             # cmd = ["time", "-p", execExcutable, "-h", groundedProblemFile, "-p", planFile]
             cmd = "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v sat-verifier"
 
@@ -95,19 +103,25 @@ for domainDir in os.listdir(benchmarkDir):
                     minutes, seconds = wallTime.split("m")[0], wallTime.split("m")[-1][:-1]
                     totalSeconds = float(minutes) * 60 + float(seconds)
                     runTimes.append(totalSeconds)
+                    with open(runtimeInfoFile, "a") as rf:
+                        info = "Domain: {}\tInstance: {}\truntime: {}\n".format(domainName, problemName, totalSeconds)
+                        rf.write(info)
                     # print(minutes, seconds)
                 else:
                     numIncorrectInstances += 1
                     evalInfoFile = path.join(evalIncorrectDir, evalInfoFileName)
             
             with open(evalInfoFile, "w") as f:
+                domainInfo = "Domain name: {}\n".format(domainName)
+                f.write(domainInfo)
+                instanceInfo = "Problem instance: {}\n".format(problemName)
+                f.write(instanceInfo)
+                planInfo = "Plan length: {}\n".format(planLength)
+                f.write(planInfo)
                 f.write(errs)
                 f.write(outs)
 
             numInstances += 1
-            # if numInstances % 20 == 0:
-            #     message = "Num of succeed instances: {}\t Num of failed instances: {}\t Num of incorrect instances: {}".format(numSucceedInstances, numFailedInstances, numIncorrectInstances)
-            #     tqdm.write(message)
             desc = "Succeed: {}/Failed: {}/Incorrect: {}".format(numSucceedInstances, numFailedInstances, numIncorrectInstances)
             pbar.update()
             pbar.set_description(desc, refresh=True)
@@ -115,30 +129,20 @@ for domainDir in os.listdir(benchmarkDir):
 
 pbar.close()              
 
+onlyRuntimeFile = path.join(outputDir, "only-runtime.txt")
+with open(onlyRuntimeFile, "w") as rf:
+    for runTime in runTimes:
+        rf.write(str(runTime) + "\n")
 
-            # isFailedInstance = False
-            # try:
-            #     # r = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            #     r = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            # except subprocess.CalledProcessError as e:
-            #     numFailedInstances += 1
-            #     with open(evalInfoFile, 'w') as f:
-            #         f.write(e.stdout + e.stderr)
-            #     isFailedInstance = True
-            
-            # if not isFailedInstance:
-            #     with open(evalInfoFile, 'w') as f:
-            #         stdout, stderr = (r.stdout.read(), r.stderr.read())
-            #         f.write(stderr)
-            #         f.write(stdout)
-            #     outputs = [s for s in stdout.split("\n") if s]
-            #     if outputs[-1] == "The given plan is a solution":
-            #         numSuccessInstances += 1
-            #     else:
-            #         numIncorrectInstances += 1
+runTimes.sort()
+figDir = path.join(outputDir, "figures")
+figPath = path.join(figDir, "eval-outputs.png")
 
-            # numInstances += 1
-
-print(numSucceedInstances)
-print(numIncorrectInstances)
-print(numFailedInstances)
+percentages = [(x / totalInstances) for x in range(len(runTimes))]
+plt.plot(percentages, runTimes)
+plt.xlabel("Percentage of solved instances")
+plt.ylabel("Runtime in seconds")
+# plt.axis([0, 1, 1, 10])
+# plt.ylim([1, 10])
+plt.yscale("log")
+plt.savefig(figPath)
