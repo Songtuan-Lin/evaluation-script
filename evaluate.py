@@ -1,16 +1,35 @@
 import os
 import os.path as path
+import argparse
 import subprocess
 import matplotlib.pyplot as plt 
 from tqdm import tqdm
 
 
+parser = argparse.ArgumentParser(description='Process directories')
+parser.add_argument("-o", "--outputDir", dest="outputDir", type=str, help="Specify the output directory")
+parser.add_argument("-b", "--benchmarkDir", dest="benchmarkDir", type=str, help="Specify the input benchmark directory")
+parser.add_argument("--invalid", dest="invalid", action="store_true", help="Specify whether the benchmark set is for invalid plans")
+
+args = parser.parse_args()
+
 homeDir = path.expanduser("~")
-# benchmarkDir = path.join(homeDir, "projects", "pandaPI", "HTN-po-domains")
-benchmarkDir = path.join(homeDir, "projects", "pandaPI", "Demo")
+currentDir = os.getcwd()
+# create output directory
+if not args.outputDir:
+    outputDir = path.join(currentDir, "eval-outputs")
+else:
+    outputDir = args.outputDir
+if not path.exists(outputDir):
+    os.mkdir(outputDir)
+# benchmark directory
+if not args.benchmarkDir:
+    benchmarkDir = path.join(homeDir, "Projects", "pandaPI", "HTN-po-domains")
+    # benchmarkDir = path.join(homeDir, "Projects", "pandaPI", "Demo")
+else:
+    benchmarkDir = args.benchmarkDir
 assert(path.exists(benchmarkDir))
-
-
+# count the total number of instances
 totalInstances = 0
 for domainDir in os.listdir(benchmarkDir):
     domainDirAbs = path.join(benchmarkDir, domainDir)
@@ -19,16 +38,11 @@ for domainDir in os.listdir(benchmarkDir):
         planDir = path.join(problemDirAbs, "plans")
         for planPath in os.listdir(planDir):
             totalInstances += 1
-pbar = tqdm(total=totalInstances)
+pbar = tqdm(total=totalInstances, dynamic_ncols = True)
 
-executable = path.join(homeDir, "projects", "pandaPI", "pandaPIengine", "build", "run_verifier")
+executable = path.join(homeDir, "Projects", "pandaPI", "pandaPIengine", "build", "run_verifier")
 assert(path.exists(executable))
 execExcutable = "./{}".format(path.relpath(executable))
-
-currentDir = os.getcwd()
-outputDir = path.join(currentDir, "eval-outputs")
-if not path.exists(outputDir):
-    os.mkdir(outputDir)
 
 runtimeInfoFile = path.join(outputDir, "runtimeInfo.txt")
 
@@ -77,7 +91,7 @@ for domainDir in os.listdir(benchmarkDir):
                 planLength = len(plan.split(";"))
 
             # cmd = ["time", "-p", execExcutable, "-h", groundedProblemFile, "-p", planFile]
-            cmd = "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v sat-verifier"
+            cmd = "ulimit -v 8388608; " "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v sat-verifier-icaps17"
 
             evalInfoFileName = "eval-info-instance-{}.txt".format(numInstances)
             # evalInfoFile = path.join(evalProblemDir, evalInfoFileName)
@@ -125,7 +139,7 @@ for domainDir in os.listdir(benchmarkDir):
             desc = "Succeed: {}/Failed: {}/Incorrect: {}".format(numSucceedInstances, numFailedInstances, numIncorrectInstances)
             pbar.update()
             pbar.set_description(desc, refresh=True)
-            # pbar.refresh()
+            pbar.refresh()
 
 pbar.close()              
 
@@ -135,7 +149,7 @@ with open(onlyRuntimeFile, "w") as rf:
         rf.write(str(runTime) + "\n")
 
 runTimes.sort()
-figDir = path.join(outputDir, "figures")
+figDir = path.join(outputDir)
 figPath = path.join(figDir, "eval-outputs.png")
 
 percentages = [(x / totalInstances) for x in range(len(runTimes))]

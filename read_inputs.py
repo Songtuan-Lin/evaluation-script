@@ -3,8 +3,8 @@ import subprocess
 
 from tqdm import tqdm
 
-# prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
-prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
+prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
+# prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
 planFilePath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "IPC-2020")
 progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progression-132")
 # planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-po")
@@ -19,7 +19,7 @@ for filename in os.listdir(progressionPlanPath):
     filenames.append(os.path.join(progressionPlanPath, filename))
 
 numFile = 3000
-domainDir = os.path.join(prefix, "HTN-po-domains")
+domainDir = os.path.join(prefix, "htn-po-domains")
 # domainDir = os.path.join(prefix, "HTN-po-domains-invalid")
 # domainDir = os.path.join(prefix, "HTN-to-domains-invalid")
 if not os.path.exists(domainDir):
@@ -77,7 +77,7 @@ for filename in tqdm(filenames):
 
         execGrounder = "./{}".format(os.path.relpath(grounderPath))
         execParser = "./{}".format(os.path.relpath(parserPath))
-        subprocess.run([execParser, "-m", absDomainPath, absProblemPath, absParseOutputPath], capture_output=True)
+        subprocess.run([execParser, absDomainPath, absProblemPath, absParseOutputPath], capture_output=True)
 
         # subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath])
         subprocess.run([execGrounder, "-E", "-D", absParseOutputPath, absGroundOutputPath], capture_output=True)
@@ -90,5 +90,5 @@ for filename in tqdm(filenames):
     if visitedNumFile >= numFile:
         break
 
-print("Number of instances read: ")
-print(visitedNumFile)
+# print("Number of instances read: ")
+# print(visitedNumFile)
