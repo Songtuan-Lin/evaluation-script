@@ -102,7 +102,7 @@ for domainDir in os.listdir(benchmarkDir):
             # evalInfoFile = path.join(evalProblemDir, evalInfoFileName)
 
             proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=os.setsid)
-            outs, errs = proc.communicate(timeout=600)
+            outs, errs = proc.communicate()
                 # numFailedInstances += 1
 
             if proc.returncode != 0:
