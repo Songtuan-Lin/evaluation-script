@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description='Process directories')
 parser.add_argument("-o", "--outputDir", dest="outputDir", type=str, help="Specify the output directory")
 parser.add_argument("-b", "--benchmarkDir", dest="benchmarkDir", type=str, help="Specify the input benchmark directory")
 parser.add_argument("--invalid", dest="invalid", action="store_true", help="Specify whether the benchmark set is for invalid plans")
+parser.add_argument("-v", "--verifier", dest="verifier", type=str, required=True, help="Specify the verifier to run")
 
 args = parser.parse_args()
 
@@ -29,6 +30,10 @@ if not args.benchmarkDir:
 else:
     benchmarkDir = args.benchmarkDir
 assert(path.exists(benchmarkDir))
+# fetch the verifier
+verifier = args.verifier
+
+
 # count the total number of instances
 totalInstances = 0
 for domainDir in os.listdir(benchmarkDir):
@@ -91,7 +96,7 @@ for domainDir in os.listdir(benchmarkDir):
                 planLength = len(plan.split(";"))
 
             # cmd = ["time", "-p", execExcutable, "-h", groundedProblemFile, "-p", planFile]
-            cmd = "ulimit -v 8388608; " "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v sat-verifier-icaps17"
+            cmd = "ulimit -v 8388608; " "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v " + verifier
 
             evalInfoFileName = "eval-info-instance-{}.txt".format(numInstances)
             # evalInfoFile = path.join(evalProblemDir, evalInfoFileName)
