@@ -96,17 +96,13 @@ for domainDir in os.listdir(benchmarkDir):
                 planLength = len(plan.split(";"))
 
             # cmd = ["time", "-p", execExcutable, "-h", groundedProblemFile, "-p", planFile]
-            cmd = "ulimit -v 8388608; " "time " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v " + verifier
+            cmd = "ulimit -v 8388608; " "time timeout 600 " + execExcutable + " -h " + groundedProblemFile + " -p " + planFile + " -v " + verifier
 
             evalInfoFileName = "eval-info-instance-{}.txt".format(numInstances)
             # evalInfoFile = path.join(evalProblemDir, evalInfoFileName)
 
-            proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            try:
-                outs, errs = proc.communicate(timeout=600)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                outs, errs = proc.communicate()
+            proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=os.setsid)
+            outs, errs = proc.communicate(timeout=600)
                 # numFailedInstances += 1
 
             if proc.returncode != 0:
