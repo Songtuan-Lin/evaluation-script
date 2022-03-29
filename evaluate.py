@@ -101,7 +101,7 @@ for domainDir in os.listdir(benchmarkDir):
             evalInfoFileName = "eval-info-instance-{}.txt".format(numInstances)
             # evalInfoFile = path.join(evalProblemDir, evalInfoFileName)
 
-            proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=os.setsid)
+            proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             outs, errs = proc.communicate()
                 # numFailedInstances += 1
 
