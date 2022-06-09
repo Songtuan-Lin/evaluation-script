@@ -1,37 +1,27 @@
 import os
+import argparse
 import subprocess
 import pdb
 
 from tqdm import tqdm
 
-prefix = os.path.join(os.path.expanduser("~"), "Projects", "ipc-benchmarks")
-pandaPIPrefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
-planFilePath = os.path.join(prefix, "ipc-2020-plans", "plans", "IPC-2020")
-planFilePathProgression = os.path.join(prefix, "ipc-2020-plans", "plans", "progression-128")
-planFilePathSAT = os.path.join(prefix, "ipc-2020-plans", "plans", "sat-121")
-# prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
-# planFilePath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "IPC-2020")
-# progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progression-132")
-# planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-po")
-# planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-to")
-# parser = argparse.ArgumentParser(description='Process Command Line Arguments')
-# parser.add_argument('--file', type=str)
+
+parser = argparse.ArgumentParser(description='Arguments for Grounding')
+parser.add_argument("instanceDirs", nargs="+", type=str, help="Input directories")
+parser.add_argument("domainRoot", type=str, help="Domain root directory")
+parser.add_argument("parser", type=str, help="Parser executable")
+parser.add_argument("grounder", type=str, help="Grounder executable")
+parser.add_argument("-o", "--output", dest="outputDir", type=str, default=None, help="Output directory")
+args = parser.parse_args()
 
 filenames = []
-for filename in os.listdir(planFilePath):
-    filenames.append(os.path.join(planFilePath, filename))
-for filename in os.listdir(planFilePathProgression):
-    filenames.append(os.path.join(planFilePathProgression, filename))
-for filename in os.listdir(planFilePathSAT):
-    filenames.append(os.path.join(planFilePathSAT, filename))
-# for filename in os.listdir(progressionPlanPath):
-#     filenames.append(os.path.join(progressionPlanPath, filename))
+for d in args.instanceDirs:
+    for instance in os.listdir(d):
+        filenames.append(os.path.join(d, instance))
 
 numFile = float("inf")
-domainDir = os.path.join(os.path.expanduser("~"), "Datasets", "htn-to-domains")
-# domainDir = os.path.join(prefix, "htn-po-domains")
-# domainDir = os.path.join(prefix, "htn-po-domains-invalid")
-# domainDir = os.path.join(prefix, "htn-to-domains-invalid")
+domainDir = os.path.join(os.path.expanduser("~"), "datasets", "htn-to-domains") if args.outputDir is None else args.outputDir
+
 if not os.path.exists(domainDir):
     os.mkdir(domainDir)
 
@@ -71,8 +61,8 @@ for filename in tqdm(filenames):
         #     os.mkdir(planDir)
     absParseOutputPath = os.path.join(parsedDir, pfileName + "." + "htn")
     # absGroundOutputPath = os.path.join(groundedDir, pfileName + "." + "sas")
-    absDomainPath = os.path.join(prefix, domainFile)
-    absProblemPath = os.path.join(prefix, problemFile)
+    absDomainPath = os.path.join(args.domainRoot, domainFile)
+    absProblemPath = os.path.join(args.domainRoot, problemFile)
 
     numExistedPlans = len(os.listdir(groundedDir))
     planFileIndex = "plan_{n}".format(n = numExistedPlans + 1)
@@ -95,7 +85,7 @@ for filename in tqdm(filenames):
     # pdb.set_trace()
 
     if not os.path.exists(absParseOutputPath):
-        parserPath = os.path.join(pandaPIPrefix, "pandaPIparser/pandaPIparser")
+        parserPath = args.parser
         if not os.path.exists(newDomainDir):
             os.mkdir(newDomainDir)
             subprocess.run(["cp", absDomainPath, newDomainDir])
@@ -105,7 +95,7 @@ for filename in tqdm(filenames):
         execParser = "./{}".format(os.path.relpath(parserPath))
         subprocess.run([execParser, absDomainPath, absProblemPath, absParseOutputPath], capture_output=True)
     
-    grounderPath = os.path.join(pandaPIPrefix, "pandaPIgrounder/pandaPIgrounder")
+    grounderPath = args.grounder
     execGrounder = "./{}".format(os.path.relpath(grounderPath))
     # subprocess.run([execGrounder, "--plan", absPlanFilePath, "-t", "-D", absParseOutputPath, absGroundOutputPath])
     subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath, "-P", planFileForGrounder], capture_output=True)
