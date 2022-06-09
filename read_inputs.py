@@ -3,10 +3,11 @@ import subprocess
 
 from tqdm import tqdm
 
-prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
-# prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
-planFilePath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "IPC-2020")
-progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progression-132")
+# prefix = os.path.join(os.path.expanduser("~"), "Projects", "pandaPI")
+prefix = os.path.join(os.path.expanduser("~"), "projects", "pandaPI")
+# planFilePath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "IPC-2020")
+# progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progression-132")
+planFilePath = os.path.join(prefix, "ipc-2020-plans", "plans", "IPC-2020")
 # planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-po")
 # planFilePath = os.path.join(prefix, "ipc-2020-plans", "inval-to")
 # parser = argparse.ArgumentParser(description='Process Command Line Arguments')
@@ -15,11 +16,12 @@ progressionPlanPath = os.path.join(prefix, "ipc-2020-plans", "po-plans", "progre
 filenames = []
 for filename in os.listdir(planFilePath):
     filenames.append(os.path.join(planFilePath, filename))
-for filename in os.listdir(progressionPlanPath):
-    filenames.append(os.path.join(progressionPlanPath, filename))
+# for filename in os.listdir(progressionPlanPath):
+#     filenames.append(os.path.join(progressionPlanPath, filename))
 
-numFile = 3000
-domainDir = os.path.join(prefix, "htn-po-domains")
+numFile = 10
+# domainDir = os.path.join(prefix, "htn-po-domains")
+domainDir = os.path.join(prefix, "htn-to-domains")
 # domainDir = os.path.join(prefix, "HTN-po-domains-invalid")
 # domainDir = os.path.join(prefix, "HTN-to-domains-invalid")
 if not os.path.exists(domainDir):
@@ -79,8 +81,8 @@ for filename in tqdm(filenames):
         execParser = "./{}".format(os.path.relpath(parserPath))
         subprocess.run([execParser, absDomainPath, absProblemPath, absParseOutputPath], capture_output=True)
 
-        # subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath])
-        subprocess.run([execGrounder, "-E", "-D", absParseOutputPath, absGroundOutputPath], capture_output=True)
+        subprocess.run([execGrounder, "-t", "-D", absParseOutputPath, absGroundOutputPath], capture_output=True)
+        # subprocess.run([execGrounder, "-E", "-D", absParseOutputPath, absGroundOutputPath], capture_output=True)
 
     numExistedPlans = len(os.listdir(planDir))
     planFileName = "plan_{n}.txt".format(n = numExistedPlans + 1)
