@@ -3,6 +3,8 @@ import argparse
 import subprocess
 import multiprocessing
 
+from tqdm import tqdm
+from functools import partial
 import pdb
 
 parser = argparse.ArgumentParser(description='Arguments for Plan Verification Evaluators')
@@ -10,11 +12,12 @@ parser.add_argument("benchmarks_dir", type=str, help="Specify the input benchmar
 parser.add_argument("executable", type=str, help="Specify the verifier executable to run")
 parser.add_argument("verifier", type=str, help="Specify the verifier")
 parser.add_argument("-o", "--outputDir", dest="outputDir", type=str, help="Specify the output directory")
+parser.add_argument("-n", "--num_workers", default=None, type=int, help="Number of threads to run the evaluator")
 parser.add_argument("--invalid", dest="invalid", action="store_true", help="Specify whether the benchmark set is for invalid plans")
 
 args = parser.parse_args()
 
-def run(instance_dir):
+def run(lock, instance_dir):
     is_succeed_run = True
     exec_cmd = "./{}".format(os.path.relpath(args.executable))
     htn_file, plan_file = None, None
@@ -41,10 +44,16 @@ def run(instance_dir):
         # some error happens
         err_info_file = os.path.join(output_dir, "err-info.txt")
         is_succeed_run = False
-        print("non-zero returncore" + instance_dir)
+        # print("non-zero returncore" + instance_dir)
         with open(err_info_file, "w") as ef:
             ef.write(outs)
             ef.write(errs)
+        lock.acquire()
+        try:
+            with open("err-log.txt", "a") as el:
+                el.write(instance_dir + "\n")
+        finally:
+            lock.release()
     else:
         lines = [line for line in outs.split("\n") if line]
         if lines[-1] != "The given plan is a solution":
@@ -78,17 +87,24 @@ def collect_instances():
     return instance_dirs
 
 def start():
-    num_succeed_instances = 0
+    # num_succeed_instances = 0
     num_cpus = multiprocessing.cpu_count()
     print("- Number of avaliable CPUs: {}\n".format(num_cpus))
     instance_dirs = collect_instances()
-    print(len(instance_dirs))
-    with multiprocessing.Pool(num_cpus) as p:
-        imap_it = p.imap_unordered(run, instance_dirs)
-        for re in imap_it:
-            if re:
-                num_succeed_instances += 1
-    print(num_succeed_instances)
+    print("- Total number of instances: {}\n".format(len(instance_dirs)))
+    lock = multiprocessing.Manager().Lock()
+    # instance_dirs = [(lock, instance_dir) for instance_dir in instance_dirs]
+    if args.num_workers is not None:
+        num_workers = args.num_workers
+    else:
+        num_workers = num_cpus
+    with multiprocessing.Pool(num_workers) as p:
+        r = list(tqdm(p.imap(partial(run, lock), instance_dirs), total=len(instance_dirs)))
+        # imap_it = p.imap_unordered(run, instance_dirs)
+        # for re in imap_it:
+        #     if re:
+        #         num_succeed_instances += 1
+    # print("Succeed instances: {}\t Failed instances: {}\n".format(num_succeed_instances, len(instance_dirs) - num_succeed_instances))
 
 if __name__ == "__main__":
     start()
