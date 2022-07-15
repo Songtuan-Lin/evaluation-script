@@ -53,18 +53,23 @@ def run(lock, instance_dir):
         lock.acquire()
         try:
             with open("err-log.txt", "a") as el:
-                el.write("Domain: {}\tProblem: {}\tPlan: {}\n".format(domain_name, problem_name, plan_ind))
+                el.write("Domain: {}\tProblem: {}\tPlan: {}\tIncorrect Ins: {}\n".format(domain_name, problem_name, plan_ind, False))
         finally:
             lock.release()
     else:
         lines = [line for line in outs.split("\n") if line]
         if lines[-1] != "The given plan is a solution":
             is_succeed_run = False
-            print(instance_dir)
             err_info_file = os.path.join(output_dir, "err-log.txt")
             with open(err_info_file, "w") as ef:
                 ef.write(outs)
                 ef.write(errs)
+            lock.acquire()
+            try:
+                with open("err-log.txt", "a") as el:
+                    el.write("Domain: {}\tProblem: {}\tPlan: {}\tIncorrect Ins: {}\n".format(domain_name, problem_name, plan_ind, True))
+            finally:
+                lock.release()
         else:
             times = [e for e in errs.split("\n") if e]
             wallTime = times[0].split('\t')[-1]
