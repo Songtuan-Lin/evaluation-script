@@ -12,6 +12,7 @@ parser.add_argument("domainRoot", type=str, help="Domain root directory")
 parser.add_argument("parser", type=str, help="Parser executable")
 parser.add_argument("grounder", type=str, help="Grounder executable")
 parser.add_argument("-o", "--output", dest="outputDir", type=str, default=None, help="Output directory")
+parser.add_argument("-n", "--num", dest="numFile", type=int, default=None, help="Maximal number of files to create")
 args = parser.parse_args()
 
 filenames = []
@@ -19,7 +20,7 @@ for d in args.instanceDirs:
     for instance in os.listdir(d):
         filenames.append(os.path.join(d, instance))
 
-numFile = float("inf")
+numFile = float("inf") if args.numFile is None else args.numFile
 domainDir = os.path.join(os.path.expanduser("~"), "datasets", "htn-to-domains") if args.outputDir is None else args.outputDir
 
 if not os.path.exists(domainDir):
@@ -62,18 +63,20 @@ for filename in tqdm(filenames):
     groundedDirPerPlan = os.path.join(groundedDir, planFileIndex)
     os.mkdir(groundedDirPerPlan)
     absPlanFilePath = os.path.join(groundedDirPerPlan, "plan.txt")
+    absPlanReFilePath = os.path.join(groundedDirPerPlan, "plan_reformat.txt")
     with open(absPlanFilePath, "w") as f:
         f.write(plan)
     absGroundOutputPath = os.path.join(groundedDirPerPlan, pfileName + "." + "sas")
 
     # write the plan to the file for the grounder
     actions = plan.split(";")
-    with open("plan", "w") as f:
+    with open(absPlanReFilePath, "w") as f:
         for action in actions:
             if action[-1] == "\n":
                 action = action[:-1]
             f.write("(" + action + ")" + "\n")
-    planFileForGrounder = os.path.abspath("plan")
+    # planFileForGrounder = os.path.abspath("plan")
+    planFileForGrounder = absPlanReFilePath
 
     if not os.path.exists(absParseOutputPath):
         parserPath = args.parser
