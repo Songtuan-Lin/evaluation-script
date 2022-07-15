@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='Arguments for Plan Verification Ev
 parser.add_argument("benchmarks_dir", type=str, help="Specify the input benchmark directory")
 parser.add_argument("executable", type=str, help="Specify the verifier executable to run")
 parser.add_argument("verifier", type=str, help="Specify the verifier")
-parser.add_argument("-o", "--outputDir", dest="outputDir", type=str, help="Specify the output directory")
+parser.add_argument("-o", "--outputDir", dest="output_dir", type=str, help="Specify the output directory")
 parser.add_argument("-n", "--num_workers", default=None, type=int, help="Number of threads to run the evaluator")
 parser.add_argument("--invalid", dest="invalid", action="store_true", help="Specify whether the benchmark set is for invalid plans")
 
@@ -29,13 +29,15 @@ def run(lock, instance_dir):
     if htn_file is None or plan_file is None:
         print("Fail to fetch the HTN problem file or the plan file in {}\n".format(instance_dir))
         raise AssertionError("Fail to fetch the HTN problem file or the plan file")
+    domain_name = instance_dir.split("/")[-4]
+    problem_name = instance_dir.split("/")[-3]
+    plan_ind = instance_dir.split("/")[-1].split("_")[-1]
     # evaluation info directory
     output_dir = os.path.join(instance_dir, "eval-info")
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     # output info file
     eval_info_file = os.path.join(output_dir, "eval-info.txt")
-    time_info_file = os.path.join(output_dir, "time-info.txt")
     # run the plan verifier
     cmd = "ulimit -v 8388608; " "time timeout 600 " + exec_cmd + " -h " + htn_file + " -p " + plan_file + " -v " + args.verifier
     proc = subprocess.Popen(cmd, executable="/bin/bash", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -51,7 +53,7 @@ def run(lock, instance_dir):
         lock.acquire()
         try:
             with open("err-log.txt", "a") as el:
-                el.write(instance_dir + "\n")
+                el.write("Domain: {}\tProblem: {}\tPlan: {}\n".format(domain_name, problem_name, plan_ind))
         finally:
             lock.release()
     else:
@@ -68,10 +70,14 @@ def run(lock, instance_dir):
             wallTime = times[0].split('\t')[-1]
             minutes, seconds = wallTime.split("m")[0], wallTime.split("m")[-1][:-1]
             total_seconds = float(minutes) * 60 + float(seconds)
-            with open(time_info_file, "w") as tf:
-                tf.write("Time in seconds: {}".format(total_seconds))
             with open(eval_info_file, "w") as of:
                 of.write(outs)
+            lock.acquire()
+            try:
+                with open("time-log.txt", "a") as tl:
+                    tl.write("Domain: {}\tProblem: {}\tPlan: {}\tTime: {}\n".format(domain_name, problem_name, plan_ind, total_seconds))
+            finally:
+                lock.release()
     return is_succeed_run
 
 def collect_instances():
@@ -105,6 +111,19 @@ def start():
         #     if re:
         #         num_succeed_instances += 1
     # print("Succeed instances: {}\t Failed instances: {}\n".format(num_succeed_instances, len(instance_dirs) - num_succeed_instances))
+
+def reformat_plans(instance_dirs):
+    for instance_dir in instance_dirs:
+        plan_file = os.path.join(instance_dir, "plan.txt")
+        with open(plan_file, "r") as f:
+            plan = f.readline()
+        actions = plan.split(";")
+        plan_reformat_file = os.path.join(instance_dir, "plan_reformat.txt")
+        with open(plan_reformat_file, "w") as f:
+            for action in actions:
+                if action[-1] == "\n":
+                    action = action[:-1]
+                f.write("(" + action + ")" + "\n")
 
 if __name__ == "__main__":
     start()
