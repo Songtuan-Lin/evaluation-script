@@ -24,7 +24,7 @@ def run(lock, instance_dir):
     for f in os.listdir(instance_dir):
         if ".sas" in f:
             htn_file = os.path.join(instance_dir, f)
-        elif ".txt" in f:
+        elif f == "plan.txt":
             plan_file = os.path.join(instance_dir, f)
     if htn_file is None or plan_file is None:
         print("Fail to fetch the HTN problem file or the plan file in {}\n".format(instance_dir))
