@@ -12,6 +12,7 @@ parser.add_argument("--transformer", type=str, help="Path to the transformer")
 parser.add_argument("--verifier", type=str, help="Path to the verifier")
 parser.add_argument("--planner", type=str, help="Path to the planner")
 parser.add_argument("--output", type=str, help="Output directory")
+parser.add_argument("--inval", action="store_true", help="Are invalid instances")
 args = parser.parse_args()
 
 
@@ -61,8 +62,12 @@ def parse_instance(ins, od, rd, dirs):
     grof_cyk = os.path.join(insdir, "{}-cyk.sas".format(pfn)) # grounded problem file for cyk
     grof_pl = os.path.join(insdir, "{}-planning.sas".format(pfn)) # founded problem file for planning-based
     # command for grounding
-    cmdg_cyk = args.grounder + " " + "-t -D" + " " + parf + " " + grof_cyk + " " + "-P" + " " + plpf
-    cmdg_pl = args.grounder + " " + "-D" + " " + parf + " " + grof_pl + " " + "-P" + " " + plpf
+    if not args.inval:
+        cmdg_cyk = args.grounder + " " + "-t -D" + " " + parf + " " + grof_cyk + " " + "-P" + " " + plpf
+        cmdg_pl = args.grounder + " " + "-D" + " " + parf + " " + grof_pl + " " + "-P" + " " + plpf
+    else:
+        cmdg_cyk = args.grounder + " " + "-t -D" + " " + parf + " " + grof_cyk
+        cmdg_pl = args.grounder + " " + "-D" + " " + parf + " " + grof_pl
     # command calling cyk-verifier
     cmdv_cyk = args.verifier + " " + "-h" + " " + grof_cyk + " " + "-p" + " " + cykpf + " " + "-v to-verifier"
     # command calling transformer 
