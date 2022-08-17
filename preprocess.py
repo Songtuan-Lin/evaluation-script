@@ -13,6 +13,7 @@ parser.add_argument("--verifier", type=str, help="Path to the verifier")
 parser.add_argument("--planner", type=str, help="Path to the planner")
 parser.add_argument("--output", type=str, help="Output directory")
 parser.add_argument("--inval", action="store_true", help="Are invalid instances")
+parser.add_argument("--no_prec", action="store_true", help="Do not keep method preconditions")
 args = parser.parse_args()
 
 
@@ -56,7 +57,10 @@ def parse_instance(ins, od, rd, dirs):
 
     parf = os.path.join(insdir, "{}.htn".format(pfn)) # parsed problem file
     # command for parsing
-    cmdp_cyk = args.parser + " " + df + " " + pf + " " + parf
+    if args.no_prec:
+        cmdp_cyk = args.parser + " " + "-m" + " " + df + " " + pf + " " + parf
+    else:
+        cmdp_cyk = args.parser + " " + df + " " + pf + " " + parf
     cmdp_pl = cmdp_cyk 
 
     grof_cyk = os.path.join(insdir, "{}-cyk.sas".format(pfn)) # grounded problem file for cyk
