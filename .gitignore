@@ -1,3 +1,7 @@
 eval-outputs/
 eval-*
 *.txt
+*.ipynb
+*.png
+finished-log/
+.ipynb_checkpoints/
