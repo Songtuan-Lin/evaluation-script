@@ -37,6 +37,8 @@ def run_pl(lock, instance_dir):
         os.mkdir(output_dir)
     # output info file
     eval_info_file = os.path.join(output_dir, "eval-info-pl.txt")
+    if os.path.exists(eval_info_file):
+        return
     cmd_file = os.path.join(instance_dir, "planning.sh")
     # run the plan verifier
     cmd = "time timeout 600 bash " + cmd_file
